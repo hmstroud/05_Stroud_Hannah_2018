@@ -150,7 +150,7 @@ replicate(20,
 Write a function that takes an alpha value, some number of simulations, two means, two standard deviations, and two sample sizes as argument, and returns the power. It should call the function you wrote in 3.3. Now, make sure this works by comparing your results to the appropriate call to  power.t.test(). Do they agree? Why or why not?
 
 ```{r}
-get_t_power <- function(m1, m2, s1,s2, n1,n2, nsims = 50, alpha = 0.05){
+get_t_power <- function(m1, m2, s1,s2, n1,n2, nsims = 100, alpha = 0.05){
   #first, p values vector
   p <- replicate(nsims,
                  get_p_from_t_test(make_t_data(m1, m2, s1,s2, n1, n2)))
@@ -170,18 +170,61 @@ Using your functions from above, explore how changing the difference between the
 ```{r}
 #create data frame for various mean differences, sd differences
 #keep n's constant 
-pow_df <- crossing(diff_m = 1:5, diff_s = 1:5, n1= 10, n2=15) %>%
+pow_df <- crossing(diff_m = 1:4, diff_s = 1:4, n1= 10, n2=15) %>%
   rowwise() %>%
   mutate(power = get_t_power(m1 = 0, m2 = diff_m, s1=0, s2=diff_s, n1 = n1, n2= n2, nsims=100, alpha=0.05)) %>%
   ungroup()
 
 #visualize differences 
-
-ggplot(data= pow_df, mapping= aes(x= diff_m, y= power, color= factor(diff_s)))+
+library(beyonce)
+power_uneq_var<- ggplot(data= pow_df, mapping= aes(x= diff_m, y= power, color= factor(diff_s)))+
          geom_point()+
-         geom_line()
+         geom_line()+
+    scale_color_manual(values = beyonce_palette(97, n=4, type= "continuous"))
+power_uneq_var
 
 ```
+Results show that as the difference between standard deviation increases, the power decreases. However as the difference between means increases, the power increases. The larger the difference between means, the more it will make up for a larger difference in standard deviation.  
+A larger difference between the mean, it will be easier to see if there is a differnce between two treatments
 
 #### 3.6 Extra Credit 
 +2 Extra credit if you include a comparison between running the test with versus without equal variances - this might require you to re-write your function from 3.2 to include an argument where you specify if you want equal or unequal variance tests to be used. +1 additional extra credit for folding this into your auto-detect unequal variance function from above, but have this argument override the automatic detection of equal or unequal variances. Lots of ways to do this, some more efficient than others.
+
+```{r}
+#rewrite equation from 3.2
+p_from_t_eq_var <- function(sim_data){
+  test <- t.test(value ~ treatment, data = sim_data, var.equal= TRUE)
+  test$p.value
+}
+
+get_t_power_var <- function(m1, m2, s1,s2, n1,n2, nsims = 50, alpha = 0.05){
+  #first, p values vector
+  p <- replicate(nsims,
+                 p_from_t_eq_var(make_t_data(m1, m2, s1,s2, n1, n2)))
+  
+  #number of incorrect p values 
+  num_wrong <- sum(p > alpha)
+  
+  #equation for calculating power 
+  1 - num_wrong/nsims
+}
+
+get_t_power_var(m1=5, m2=7, s1=1, s2=3, n1=10, n2=15)
+```
+We have a lower power when running the test with equal variance. 
+
+```{r}
+pow_df_eq_var <- crossing(diff_m = 1:4, diff_s = 1:4, n1= 10, n2=15) %>%
+  rowwise() %>%
+  mutate(power = get_t_power(m1 = 0, m2 = diff_m, s1=0, s2=diff_s, n1 = n1, n2= n2, nsims=100, alpha=0.05)) %>%
+  ungroup()
+
+#visualize differences 
+library(beyonce)
+power_eq_var<- ggplot(data= pow_df, mapping= aes(x= diff_m, y= power, color= factor(diff_s)))+
+         geom_point()+
+         geom_line()+
+    scale_color_manual(values = beyonce_palette(96, n=5, type= "continuous"))
+
+power_eq_var
+```
