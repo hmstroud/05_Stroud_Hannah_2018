@@ -11,3 +11,119 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## T test and Chisq
 
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+### 1 W&S X^2 Questions 
+Ch 8: 12 & 24, Ch 9: 16 & 27  
+####1.1 Ch8, Q12
+87 bears sampled, 42-BB, 24-Bb, 21-bb  
+
+12a. fraction of b alleles in population:  
+(24+42)/(87*2)= 0.3793  
+
+12b. expected_frequency of bionomial distribution
+(0.3793)*(1-0.3793)*2= 0.470863 Probability of Bb 
+Expected frequency of Bb: 0.470863*87= 40.965 
+Expected frequency of bb:(0.3793)^2= 0.1438*87= 12.5106
+Expected frequency of BB: (1-0.3793)^2= 0.3852*87= 33.5183
+
+12c. compare observed vs expected via graph
+```{r}
+observed<- c(42, 24, 21)
+#in order BB, Bb, bb
+expected<- c(33.5183, 40.965, 12.5106)
+bears_df <- data.frame(observed, expected)
+
+ggplot(data=bears_df)+geom_bar(stat="id")
+#something with stat= or stat_count....
+
+```
+
+####1.2 Ch8, Q24
+30 tested, 17 towards volatiles, 2 away, 7 to left, 4 to right  
+
+24a. Graph the relative frequency distribution for these results. What type of graph is ideal?  
+
+24b. What is the relative expected frequency if the parasite is unable to detect volatiles/cues? add to graph in part a.  
+
+24c. Using the data, calculate the fraction of seedlings growing towards volatiles
+17/30= 0.567
+This fracrtion estimates the likelihood of a seedling to grow towards the volatiles.  
+
+24d. Provide a standard error for your estimate. What does the standard error represent?  
+
+24e. Calculate the range of most-plausible values for the fraction of dodder seedlings that grow toward volatiles under experimental conditions. Does it include the fraction expected if the parasite is unable to detect plant volatiles or other cues?
+
+####1.3 Ch9 16
+
+9a. Calculate the expected frequencies for a contingency test 
+
+```{r}
+#prairie<- read_csv("./Data/chap09q16PrairieDogMultipleMating.csv")
+mating_1_birth <- (249*87)/263
+  mating_1_birth
+mating_2_birth <- (249*93)/263
+  mating_2_birth
+mating_3_birth <- (249*61)/263
+  mating_3_birth
+mating_4_birth <- (249*17)/263
+  mating_4_birth
+mating_5_birth <- (249*5)/263
+  mating_5_birth
+mating_1_no_b <- (14*87)/263
+  mating_1_no_b
+mating_2_no_b <- (14*93)/263
+  mating_2_no_b
+mating_3_no_b <- (14*61)/263
+  mating_3_no_b
+mating_4_no_b <- (14*17)/263
+  mating_4_no_b
+mating_5_no_b <- (14*5)/263
+  mating_5_no_b
+```
+9b. They don't meet the assumptions, we have two expected frequencies less than 1. The categories could be combined to get larger frequencies (ie mates 2 times or less, mates 3 times of more), or a permutation test could be done instead of a chi squared.  
+
+9c. It is likely that mating with more males increases the probability of giving birth, but there could also be a relationship between something else (hormones, health, etc) of prairie dogs that increases their chances of giving birth, and their tendency to mate more often.  
+
+####1.4 Ch9 27
+
+     
+```{r}
+freq_exp <- 
+```
+
+### 2. W&S t-test Questions
+Ch 11: 21, Ch 12: 20, 26, & 30
+
+### 3. T and Power
+
+#### 3.1 Data generating process 
+Write a function that takes two means, two standard deviations, and two sample sizes as arguments. Have it return a data frame or tibble based on the inputs ready to go for a t-test!  
+
+```{r} 
+make_t_data <- function(m1, m2, s1, s2, n1, n2){
+  #make a data frame, repeating treatments n number of times
+  #and use rnorm to get values
+  data.frame(treatment = c(rep("A", n1), rep("B", n2)),
+             value = rnorm(n*2, mean = c(rep(m1,n1), rep(m2, n2)), s))
+}
+``` 
+
+#### 3.2 P from T
+Write a function that takes a data frame and runs a two-tailed t-test with the variances assumed to be unequal. Show it works by comparing it’s p-value to that returned by t-test for the same simulated data set. Note, if you gave particular column names in the function from 3.1, you should use those here! If you are stumped on how to get a p-value, look at the help file for t.test, remembering that the output from t.test is a list! +2 Extra credit, look at ?ifelse or ?"if" and use one of them to have your function choose to use unequal variances if your variances differ by 20%.
+
+#### 3.3 Generate many P's
+Write a function that takes takes some number of simulations, two means, two standard deviations, and two sample sizes as arguments and returns a vector of p values equal in length to that number of simulations. It should call your functions from 3.1 and 3.2 using replicate() or  purrr::rerun() or some other strategy to do something many times. Your call! **Extra credit - try it different ways and show using a large number of simulations and system.time() or the profileR package which way is faster.
+
+#### 3.4 Power analysis
+Write a function that takes an alpha value, some number of simulations, two means, two standard deviations, and two sample sizes as argument, and returns the power. It should call the function you wrote in 3.3. Now, make sure this works by comparing your results to the appropriate call to  power.t.test(). Do they agree? Why or why not?
+
+#### 3.5 Showi it works 
+Using your functions from above, explore how changing the difference between the the means of two groups interacts with the difference between two standard deviations of groups to affect the power of a t-test. Explain the results you produce. +1 Extra credit for using a color scheme from the wesanderson or beyonce package that is illuminating.
+
+#### 3.6 Extra Credit 
++2 Extra credit if you include a comparison between running the test with versus without equal variances - this might require you to re-write your function from 3.2 to include an argument where you specify if you want equal or unequal variance tests to be used. +1 additional extra credit for folding this into your auto-detect unequal variance function from above, but have this argument override the automatic detection of equal or unequal variances. Lots of ways to do this, some more efficient than others.
