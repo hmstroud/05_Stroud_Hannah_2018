@@ -109,21 +109,79 @@ make_t_data <- function(m1, m2, s1, s2, n1, n2){
   #make a data frame, repeating treatments n number of times
   #and use rnorm to get values
   data.frame(treatment = c(rep("A", n1), rep("B", n2)),
-             value = rnorm(n*2, mean = c(rep(m1,n1), rep(m2, n2)), s))
+             value = rnorm(n1+n2, mean = c(rep(m1,n1), rep(m2, n2)), sd= c(rep(s1,n1), rep(s2, n2))))
 }
+
+#check
+make_t_data(m1=5, m2=8, s1=1, s2=2, n1=10, n2=15)
 ``` 
 
 #### 3.2 P from T
 Write a function that takes a data frame and runs a two-tailed t-test with the variances assumed to be unequal. Show it works by comparing it’s p-value to that returned by t-test for the same simulated data set. Note, if you gave particular column names in the function from 3.1, you should use those here! If you are stumped on how to get a p-value, look at the help file for t.test, remembering that the output from t.test is a list! +2 Extra credit, look at ?ifelse or ?"if" and use one of them to have your function choose to use unequal variances if your variances differ by 20%.
 
+```{r}
+#fit a model with that data and get p?
+#two-tailed test- I think that's the default....
+get_p_from_t_test <- function(sim_data){
+  test <- t.test(value ~ treatment, data = sim_data)
+  test$p.value
+}
+
+#test out function 
+#test out function above 
+get_p_from_t_test(make_t_data(m1=5, m2=8, s1=1, s2=2, n1=10, n2=15))
+#this is a very small value of p, I'm not sure if that is good or not
+
+```
+
 #### 3.3 Generate many P's
 Write a function that takes takes some number of simulations, two means, two standard deviations, and two sample sizes as arguments and returns a vector of p values equal in length to that number of simulations. It should call your functions from 3.1 and 3.2 using replicate() or  purrr::rerun() or some other strategy to do something many times. Your call! **Extra credit - try it different ways and show using a large number of simulations and system.time() or the profileR package which way is faster.
+
+```{r}
+#want a vector of p values of the length of number of simulations. 
+
+replicate(20,
+          get_p_from_t_test(make_t_data(m1=5, m2=8, s1=1, s2=2, n1=10, n2=15)))
+#I think that worked 
+```
+
 
 #### 3.4 Power analysis
 Write a function that takes an alpha value, some number of simulations, two means, two standard deviations, and two sample sizes as argument, and returns the power. It should call the function you wrote in 3.3. Now, make sure this works by comparing your results to the appropriate call to  power.t.test(). Do they agree? Why or why not?
 
-#### 3.5 Showi it works 
+```{r}
+get_t_power <- function(m1, m2, s1,s2, n1,n2, nsims = 50, alpha = 0.05){
+  #first, p values vector
+  p <- replicate(nsims,
+                 get_p_from_t_test(make_t_data(m1, m2, s1,s2, n1, n2)))
+  
+  #number of incorrect p values 
+  num_wrong <- sum(p > alpha)
+  
+  #equation for calculating power 
+  1 - num_wrong/nsims
+}
+
+get_t_power(m1=5, m2=7, s1=1, s2=3, n1=10, n2=15)
+```
+#### 3.5 Show it works 
 Using your functions from above, explore how changing the difference between the the means of two groups interacts with the difference between two standard deviations of groups to affect the power of a t-test. Explain the results you produce. +1 Extra credit for using a color scheme from the wesanderson or beyonce package that is illuminating.
+
+```{r}
+#create data frame for various mean differences, sd differences
+#keep n's constant 
+pow_df <- crossing(diff_m = 1:5, diff_s = 1:5, n1= 10, n2=15) %>%
+  rowwise() %>%
+  mutate(power = get_t_power(m1 = 0, m2 = diff_m, s1=0, s2=diff_s, n1 = n1, n2= n2, nsims=100, alpha=0.05)) %>%
+  ungroup()
+
+#visualize differences 
+
+ggplot(data= pow_df, mapping= aes(x= diff_m, y= power, color= factor(diff_s)))+
+         geom_point()+
+         geom_line()
+
+```
 
 #### 3.6 Extra Credit 
 +2 Extra credit if you include a comparison between running the test with versus without equal variances - this might require you to re-write your function from 3.2 to include an argument where you specify if you want equal or unequal variance tests to be used. +1 additional extra credit for folding this into your auto-detect unequal variance function from above, but have this argument override the automatic detection of equal or unequal variances. Lots of ways to do this, some more efficient than others.
