@@ -141,15 +141,35 @@ table_w
 
 chisq.test(widows$health_deterioration,widows$widowed)
 #Give P value as precisely as possible and interpret results
-chisq.test(extinct$Frequency, p= frequency)
 ```
 P= 0.00374, which is really low meaning we can reject the null that the two groups have the same pattern of health deterioration. 
 ### 2. W&S t-test Questions
 Ch 11: 21, Ch 12: 20, 26, & 30
 #### 2.1 Ch11 Q21
+
+21a. graph the data
 ```{r}
-read_csv("./data/chap11q21SoilLeadAndHurricanes.csv")
+soil <-read_csv("./data/chap11q21SoilLeadAndHurricanes.csv")
+#given log ratios
+#these log ratios have a normal distribution. 
+ggplot(data=soil, mapping= aes(x= Site, y= Change)) +
+  geom_col()
+
 ```
+21b. 
+
+#### 2.2 Ch12, Q20
+
+#### 2.3 Ch12, Q26
+```{r}
+hyenas <- read_csv("./data/chap12q26HyenaGiggles.csv")
+#do dominant and subordinate differ? --> paired t-test
+t.test(hyenas$dominantIndividualGiggleVariation, y=hyenas$subordinateIndividualGiggleVariation, paired= TRUE)
+```
+Our p value is just over 0.02157, we can reject the null- the means innn giggle spectral CV differ significantly. 
+
+#### 2.4 Ch12, Q30 
+They should not have used a two sample test because that looks at the difference between the two means. But you are looking at two populations, independent of each other in determining kin. You could evaluate them each separately to a null hypothesis. 
 
 ### 3. T and Power
 
@@ -278,5 +298,5 @@ power_eq_var<- ggplot(data= pow_df, mapping= aes(x= diff_m, y= power, color= fac
          geom_line()+
     scale_color_manual(values = beyonce_palette(96, n=5, type= "continuous"))
 
-power_eq_var
+power_eq_var+power_uneq_var
 ```
