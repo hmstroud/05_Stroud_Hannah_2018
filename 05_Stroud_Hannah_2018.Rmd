@@ -156,10 +156,39 @@ ggplot(data=soil, mapping= aes(x= Site, y= Change)) +
   geom_col()
 
 ```
-21b. 
+21b. Determine the most plausible range of values for mean change in soil (ie CI?). Describe in words the nature of the change. Is an increase consistent with the data? A decrease?
+```{r}
+library(broom)
+tidy(t.test(soil$Change))
+```
+The most plausible range of mean change is between -201.4698 and -48.31283 mg/kg. An increase is not consistent with the data, most saw a decrease, hence the negative range of mean values. 
 
+21c. Test whether mean soil lead changed after the hurricanes. 
+
+```{R}
+before <- mean(soil$Soil_lead_Before_Katrina)
+before
+after <- mean(soil$Soil_lead_After_Katrina)
+after
+```
+The mean soil changed after hurricanes. 
 #### 2.2 Ch12, Q20
+20a. What is the difference between areas upstream and downstream? what is the 95% CI of the mean difference?  
+```{r}
+species<- read_csv("./data/chap12q20ElectricFish.csv")
 
+species<- species %>% 
+  mutate(differnce= speciesUpstream-speciesDownstream)
+#two tailed t-test 
+ t.test(species$differnce,
+                       unequal.var= TRUE)
+ 
+qqnorm(species$differnce)
+
+#some kind of fucking t test is the answer t.test(species$speciesUpstream~species$speciesDownstream, data= species, alternative = "two.sided")
+```
+
+20b. Test the hypothesis that the tributaries have no effect on number of species.
 #### 2.3 Ch12, Q26
 ```{r}
 hyenas <- read_csv("./data/chap12q26HyenaGiggles.csv")
@@ -202,7 +231,7 @@ get_p_from_t_test <- function(sim_data){
 #test out function 
 #test out function above 
 get_p_from_t_test(make_t_data(m1=5, m2=8, s1=1, s2=2, n1=10, n2=15))
-#this is a very small value of p, I'm not sure if that is good or not
+#this is a very small value of p
 
 ```
 
@@ -211,31 +240,40 @@ Write a function that takes takes some number of simulations, two means, two sta
 
 ```{r}
 #want a vector of p values of the length of number of simulations. 
+gen_many_p <- function(nsim, m1, m2, s1, s2, n1, n2){
+replicate(nsim,
+          get_p_from_t_test(make_t_data(m1, m2, s1, s2, n1, n2)))
+}
 
-replicate(20,
-          get_p_from_t_test(make_t_data(m1=5, m2=8, s1=1, s2=2, n1=10, n2=15)))
-#I think that worked 
+test <-gen_many_p(nsim=20,m1=5, m2=8, s1=1, s2=2, n1=10, n2=15)
+
 ```
 
 
 #### 3.4 Power analysis
 Write a function that takes an alpha value, some number of simulations, two means, two standard deviations, and two sample sizes as argument, and returns the power. It should call the function you wrote in 3.3. Now, make sure this works by comparing your results to the appropriate call to  power.t.test(). Do they agree? Why or why not?
 
+
 ```{r}
-get_t_power <- function(m1, m2, s1,s2, n1,n2, nsims = 100, alpha = 0.05){
+get_t_power <- function(m1, m2, s1,s2, n1,n2, nsim = 100, alpha = 0.05){
   #first, p values vector
-  p <- replicate(nsims,
-                 get_p_from_t_test(make_t_data(m1, m2, s1,s2, n1, n2)))
+  p <- gen_many_p(nsim, m1, m2, s1, s2, n1, n2)
   
   #number of incorrect p values 
   num_wrong <- sum(p > alpha)
   
   #equation for calculating power 
-  1 - num_wrong/nsims
+  1 - num_wrong/nsim
 }
 
 get_t_power(m1=5, m2=7, s1=1, s2=3, n1=10, n2=15)
+
+#compare to power.t.test (a function we never reviewed in class)
+
+power.t.test(25, 3, 2)
 ```
+I got a much higher power, but I honestly don't understand how to get this function to work since there are two standard deviations and the argument for this test only wants one. 
+
 #### 3.5 Show it works 
 Using your functions from above, explore how changing the difference between the the means of two groups interacts with the difference between two standard deviations of groups to affect the power of a t-test. Explain the results you produce. +1 Extra credit for using a color scheme from the wesanderson or beyonce package that is illuminating.
 
@@ -244,7 +282,7 @@ Using your functions from above, explore how changing the difference between the
 #keep n's constant 
 pow_df <- crossing(diff_m = 1:4, diff_s = 1:4, n1= 10, n2=15) %>%
   rowwise() %>%
-  mutate(power = get_t_power(m1 = 0, m2 = diff_m, s1=0, s2=diff_s, n1 = n1, n2= n2, nsims=100, alpha=0.05)) %>%
+  mutate(power = get_t_power(m1 = 0, m2 = diff_m, s1=0, s2=diff_s, n1 = n1, n2= n2, nsim=100, alpha=0.05)) %>%
   ungroup()
 
 #visualize differences 
@@ -269,16 +307,16 @@ p_from_t_eq_var <- function(sim_data){
   test$p.value
 }
 
-get_t_power_var <- function(m1, m2, s1,s2, n1,n2, nsims = 50, alpha = 0.05){
+get_t_power_var <- function(m1, m2, s1,s2, n1,n2, nsim = 50, alpha = 0.05){
   #first, p values vector
-  p <- replicate(nsims,
+  p <- replicate(nsim,
                  p_from_t_eq_var(make_t_data(m1, m2, s1,s2, n1, n2)))
   
   #number of incorrect p values 
   num_wrong <- sum(p > alpha)
   
   #equation for calculating power 
-  1 - num_wrong/nsims
+  1 - num_wrong/nsim
 }
 
 get_t_power_var(m1=5, m2=7, s1=1, s2=3, n1=10, n2=15)
@@ -288,7 +326,7 @@ We have a lower power when running the test with equal variance.
 ```{r}
 pow_df_eq_var <- crossing(diff_m = 1:4, diff_s = 1:4, n1= 10, n2=15) %>%
   rowwise() %>%
-  mutate(power = get_t_power(m1 = 0, m2 = diff_m, s1=0, s2=diff_s, n1 = n1, n2= n2, nsims=100, alpha=0.05)) %>%
+  mutate(power = get_t_power(m1 = 0, m2 = diff_m, s1=0, s2=diff_s, n1 = n1, n2= n2, nsim=100, alpha=0.05)) %>%
   ungroup()
 
 #visualize differences 
