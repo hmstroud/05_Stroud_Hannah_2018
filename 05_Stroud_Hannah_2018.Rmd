@@ -178,7 +178,7 @@ before
 after <- mean(soil$Soil_lead_After_Katrina)
 after
 ```
-The mean soil changed after hurricanes. 
+The mean soil changed after hurricane from 331.7391 to 206.8478
 #### 2.2 Ch12, Q20
 20a. What is the difference between areas upstream and downstream? what is the 95% CI of the mean difference?  
 ```{r}
@@ -197,7 +197,9 @@ qqnorm(species$differnce)
 The mean difference between upstream and downstream is -1.84. The confidence interval is -3.9464 to 0.2797  
 
 20b. Test the hypothesis that the tributaries have no effect on number of species.
-So the null hypothesis would be that the difference is 0, using the t test from above we find that our p value is 0.08, and we fail to reject the null. 
+So the null hypothesis would be that the difference is 0, using the t test from above we find that our p value is 0.08, and we fail to reject the null.  
+
+20c. We assumed the differences were normally distributed, and a random sample.  
 #### 2.3 Ch12, Q26
 ```{r}
 hyenas <- read_csv("./data/chap12q26HyenaGiggles.csv")
