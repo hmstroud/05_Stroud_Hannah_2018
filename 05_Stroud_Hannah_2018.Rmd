@@ -84,12 +84,19 @@ This fraction estimates the likelihood within the sample of a seedling to grow t
 24d. Provide a standard error for your estimate. What does the standard error represent?   
 ```{r}
 p <- 17/30
-sqrt((p*(1-p))/30)
+sqrt((p*(1-p))/30)  #probability of something happening, multiplied by the probality of it not happening divided by the sample size
 ```
-The standard error tells us that something......  
+The standard error with this data tells us we have a fairly precise estimate of plants growing towards the volatiles.  
 
 24e. Calculate the range of most-plausible values for the fraction of dodder seedlings that grow toward volatiles under experimental conditions. Does it include the fraction expected if the parasite is unable to detect plant volatiles or other cues?
 
+CI from book: 2*SE 
+```{r}
+CI <-2*0.09047201
+Upper_CI <- p + 2*CI
+Lower_CI <- p - 2*CI
+```
+The range of most plausible values is 0.2047786 - 0.9285547. It does include the fraction.  
 ####1.3 Ch9 16
 
 9a. Calculate the expected frequencies for a contingency test 
@@ -179,16 +186,18 @@ species<- read_csv("./data/chap12q20ElectricFish.csv")
 
 species<- species %>% 
   mutate(differnce= speciesUpstream-speciesDownstream)
-#two tailed t-test 
+#check assumptions 
+qqnorm(species$differnce) 
+
+#one sample t-test 
  t.test(species$differnce,
                        unequal.var= TRUE)
- 
-qqnorm(species$differnce)
 
-#some kind of fucking t test is the answer t.test(species$speciesUpstream~species$speciesDownstream, data= species, alternative = "two.sided")
 ```
+The mean difference between upstream and downstream is -1.84. The confidence interval is -3.9464 to 0.2797  
 
 20b. Test the hypothesis that the tributaries have no effect on number of species.
+So the null hypothesis would be that the difference is 0, using the t test from above we find that our p value is 0.08, and we fail to reject the null. 
 #### 2.3 Ch12, Q26
 ```{r}
 hyenas <- read_csv("./data/chap12q26HyenaGiggles.csv")
@@ -267,12 +276,8 @@ get_t_power <- function(m1, m2, s1,s2, n1,n2, nsim = 100, alpha = 0.05){
 }
 
 get_t_power(m1=5, m2=7, s1=1, s2=3, n1=10, n2=15)
-
-#compare to power.t.test (a function we never reviewed in class)
-
-power.t.test(25, 3, 2)
 ```
-I got a much higher power, but I honestly don't understand how to get this function to work since there are two standard deviations and the argument for this test only wants one. 
+You can't compare to a power.t.test because it doesn't work with a  difference in standard deviation. 
 
 #### 3.5 Show it works 
 Using your functions from above, explore how changing the difference between the the means of two groups interacts with the difference between two standard deviations of groups to affect the power of a t-test. Explain the results you produce. +1 Extra credit for using a color scheme from the wesanderson or beyonce package that is illuminating.
